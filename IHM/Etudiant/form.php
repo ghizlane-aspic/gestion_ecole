@@ -1,3 +1,15 @@
 <?php
-// IHM\Etudiant\form.php
 
+
+?>
+<html>
+<div>
+    <form>
+        
+
+
+    </form>
+</div>
+
+
+</html>
