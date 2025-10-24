@@ -1,3 +1,9 @@
-<?php
-// IHM\accueil.php
+<?php 
 
+include './Etudiant/affichage.php';
+
+$userID='dd';
+
+
+
+?>
