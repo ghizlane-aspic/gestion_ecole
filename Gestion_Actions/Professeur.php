@@ -1,59 +1,21 @@
 <?php
-// Gestion_Actions\Professeur.php
+// Gestion_Actions/Professeur.php
 
-require_once 'connexion.php';
+require_once '../Acces_BD/connexion.php';
+require_once '../Acces_BD/Professeur.php';
 
-class Professeur {
-    private $pdo;
+$pdo = connect();
+$prof = new Professeur($pdo);
 
-    public function __construct($pdo) {
-        $this->pdo = $pdo;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['ajouter'])) {
+        $prof->add($_POST['code'], $_POST['nom'], $_POST['prenom'], $_POST['email'],
+                   $_POST['langues'], $_POST['specialite'], $_POST['mot_de_passe']);
+        header('Location: ../IHM/Prof/affichage.php');
     }
+}
 
-    public function add($code, $nom, $prenom, $email, $langues, $specialite, $mot_de_passe) {
-        $hash = password_hash($mot_de_passe, PASSWORD_DEFAULT);
-        $sql = "INSERT INTO prof (code, nom, prenom, email, langues, specialite, mot_de_passe)
-                VALUES (:code, :nom, :prenom, :email, :langues, :specialite, :mot_de_passe)";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
-            'code' => $code,
-            'nom' => $nom,
-            'prenom' => $prenom,
-            'email' => $email,
-            'langues' => $langues,
-            'specialite' => $specialite,
-            'mot_de_passe' => $hash
-        ]);
-    }
-
-    public function update($id, $code, $nom, $prenom, $email, $langues, $specialite) {
-        $sql = "UPDATE prof SET code=:code, nom=:nom, prenom=:prenom, email=:email, langues=:langues, specialite=:specialite
-                WHERE id=:id";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
-            'id' => $id,
-            'code' => $code,
-            'nom' => $nom,
-            'prenom' => $prenom,
-            'email' => $email,
-            'langues' => $langues,
-            'specialite' => $specialite
-        ]);
-    }
-
-    public function delete($id) {
-        $stmt = $this->pdo->prepare("DELETE FROM prof WHERE id=:id");
-        return $stmt->execute(['id' => $id]);
-    }
-
-    public function getAll() {
-        $stmt = $this->pdo->query("SELECT id, code, nom, prenom, email, langues, specialite FROM prof");
-        return $stmt->fetchAll();
-    }
-
-    public function getById($id) {
-        $stmt = $this->pdo->prepare("SELECT id, code, nom, prenom, email, langues, specialite FROM prof WHERE id=:id");
-        $stmt->execute(['id' => $id]);
-        return $stmt->fetch();
-    }
+if (isset($_GET['delete'])) {
+    $prof->delete($_GET['delete']);
+    header('Location: ../IHM/Prof/affichage.php');
 }
