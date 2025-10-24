@@ -35,7 +35,7 @@ jobs:
           # IMPORTANT : Décommentez la ligne suivante si vous avez des problèmes persistants
           # et que vous êtes sûr que composer.json est correct.
           # Cela forcera une résolution complète des dépendances à nouveau.
-          # rm composer.lock
+          rm composer.lock
 
       - name: Installer les dépendances Composer # Ajouté un nom à l'étape
         run: composer install --no-interaction --prefer-dist
