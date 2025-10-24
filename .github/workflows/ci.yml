@@ -27,13 +27,22 @@ jobs:
           php-version: '8.1'
           extensions: mbstring, mysqli, pdo_mysql
 
+      - name: Nettoyer le cache Composer et le répertoire vendor # NOUVELLE ÉTAPE
+        run: |
+          composer clear-cache
+          rm -rf vendor
+          # Facultatif : Décommentez la ligne suivante si vous voulez régénérer composer.lock
+          # rm composer.lock
+
+
+
       - run: composer install --no-interaction --prefer-dist
 
       - run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
       - run: |
           echo "DB_CONNECTION=mysql" >> .env
-          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_HOST=localhost" >> .env
           echo "DB_PORT=3306" >> .env
           echo "DB_DATABASE=gestion_ecole" >> .env
           echo "DB_USERNAME=root" >> .env
