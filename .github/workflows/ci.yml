@@ -18,6 +18,7 @@ jobs:
           MYSQL_DATABASE: gestion_ecole
         ports:
           - "3306:3306"
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10 # Ajoutez cette option pour une meilleure robustesse
 
     steps:
       - uses: actions/checkout@v3
@@ -27,25 +28,48 @@ jobs:
           php-version: '8.1'
           extensions: mbstring, mysqli, pdo_mysql
 
-      - name: Nettoyer le cache Composer et le répertoire vendor # NOUVELLE ÉTAPE
+      - name: Nettoyer le cache Composer et le répertoire vendor
         run: |
           composer clear-cache
           rm -rf vendor
-          # Facultatif : Décommentez la ligne suivante si vous voulez régénérer composer.lock
+          # IMPORTANT : Décommentez la ligne suivante si vous avez des problèmes persistants
+          # et que vous êtes sûr que composer.json est correct.
+          # Cela forcera une résolution complète des dépendances à nouveau.
           # rm composer.lock
 
+      - name: Installer les dépendances Composer # Ajouté un nom à l'étape
+        run: composer install --no-interaction --prefer-dist
 
+      # --- Étape de débogage temporaire (à retirer une fois que ça fonctionne) ---
+      - name: Vérifier le contenu de vendor/bin après l'installation de Composer
+        run: ls -l vendor/bin/ || echo "Le répertoire vendor/bin est vide ou n'existe pas."
+      # ---------------------------------------------------------------------
 
-      - run: composer install --no-interaction --prefer-dist
+      - name: Créer le fichier .env (s'il n'existe pas)
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      - run: php -r "file_exists('.env') || copy('.env.example', '.env');"
-
-      - run: |
+      - name: Configurer .env pour la base de données # Nom de l'étape ajouté
+        run: |
           echo "DB_CONNECTION=mysql" >> .env
-          echo "DB_HOST=localhost" >> .env
+          echo "DB_HOST=mysql" >> .env # CORRIGÉ : DOIT ÊTRE 'mysql', PAS 'localhost' ou '127.0.0.1'
           echo "DB_PORT=3306" >> .env
           echo "DB_DATABASE=gestion_ecole" >> .env
           echo "DB_USERNAME=root" >> .env
           echo "DB_PASSWORD=root" >> .env
 
-      - run: vendor/bin/phpunit
+      - name: Attendre que MySQL soit prêt # Ajouté, crucial
+        run: |
+          until mysql -h mysql -P 3306 -u root -proot -e "SELECT 1"; do
+            echo "Attente de MySQL..."
+            sleep 1
+          done
+
+      - name: Exécuter les migrations de base de données # CRUCIAL : AJOUTEZ VOTRE COMMANDE DE MIGRATION ICI
+        # Exemple si vous utilisez Laravel :
+        run: php artisan migrate --force
+        # OU si vous avez un fichier SQL à importer :
+        # run: mysql -h mysql -P 3306 -u root -proot gestion_ecole < database/schema.sql
+        # Remplacez 'database/schema.sql' par le chemin réel de votre fichier SQL.
+
+      - name: Exécuter les tests PHPUnit # Nom de l'étape ajouté
+        run: vendor/bin/phpunit
